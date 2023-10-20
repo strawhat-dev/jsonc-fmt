@@ -1,7 +1,9 @@
 # Based on https://raw.githubusercontent.com/github/gitignore/main/Node.gitignore
 
-# Logs
+# bin
+bin/
 
+# Logs
 logs
 _.log
 npm-debug.log_
@@ -173,4 +175,3 @@ dist
 
 # Finder (MacOS) folder config
 .DS_Store
-
