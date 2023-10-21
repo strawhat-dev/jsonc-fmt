@@ -1,6 +1,5 @@
 import type { BunFile } from 'bun';
-import type { Node } from 'jsonc-parser';
-import { getLocation, parseTree, visit } from 'jsonc-parser';
+import { getLocation, type Node, parseTree, visit } from 'jsonc-parser';
 
 const indent_width = 2;
 
@@ -49,33 +48,20 @@ export const format = (json: string) => {
     });
   }
 
-  const ast = parseTree(lines.join('\n'))!;
   prepend.length && prepend.push('');
+  const ast = parseTree(lines.join('\n'))!;
   let result = formatNode(ast, prepend.join('\n'));
+  if (result == null) return Promise.reject(new Error('Invalid JSON'));
   for (const [id, comment] of comments) result = result.replace(id, comment);
   return result;
 };
 
-const formatNode = (
-  ast: Node,
-  data = '',
-  level = 0,
-  type = ast?.value ? 'value' : ast?.type,
-) => ({
-  value() {
-    let value = ast.value;
-    ast.type === 'string' && (value = `"${value}"`);
-    return `${data}${value}`;
-  },
+const formatNode = (ast: Node, data = '', level = 0): string => ({
+  ['value' as string]: () => `${data}${JSON.stringify(ast.value)}`,
   property() {
     const [{ value: prop }, child] = ast.children!;
     data += `${indent(level)}"${prop}": `;
     return formatNode(child, data, level);
-  },
-  object() {
-    data += '{\n';
-    data += map(ast.children!, (child) => formatNode(child, '', level + 1)).join(',\n');
-    return `${data}\n${indent(level)}}`;
   },
   array() {
     const [i, div] = ast.parent!.length > print_width ? [level, '\n'] : [-1, ''];
@@ -84,7 +70,14 @@ const formatNode = (
     data += map(ast.children!, (child) => formatNode(child, pad, level + 1)).join(sep);
     return `${data}${div}${indent(i)}]`;
   },
-}[type as 'value']?.() ?? (() => {
-  const cause = { ast, data, level };
-  throw new Error('Invalid JSON', { cause });
-})());
+  object() {
+    if (!ast.children?.length) return `${data}{}`;
+    else if (ast.parent && ast.children.length < 3 && ast.length < print_width) {
+      return `${data}{ ${map(ast.children, formatNode).join(', ')} }`;
+    }
+
+    data += '{\n';
+    data += map(ast.children!, (child) => formatNode(child, '', level + 1)).join(',\n');
+    return `${data}\n${indent(level)}}`;
+  },
+}['value' in (ast || {}) ? 'value' : ast?.type]?.());

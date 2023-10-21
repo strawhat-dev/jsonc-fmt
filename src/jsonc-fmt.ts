@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
-import type { BunFile } from 'bun';
 import { isatty } from 'tty';
+import { type BunFile, readableStreamToText } from 'bun';
 import { format, map, popItem, writeln } from './lib';
 
-if (!isatty(0)) Bun.stdin.text().then(format).then(writeln);
+if (!isatty(0)) readableStreamToText(Bun.stdin.stream()).then(format).then(writeln);
 else {
   const args = process.argv.slice(2);
   const debug = popItem(args, '-d');
@@ -25,7 +25,7 @@ else {
       );
     }
 
-    writeln(out, file);
+    return writeln(out, file);
   };
 
   for (const file of map(args, Bun.file)) await file.text().then(format).then(handle(file));
