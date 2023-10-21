@@ -51,7 +51,7 @@ export const format = (json: string) => {
   prepend.length && prepend.push('');
   const ast = parseTree(lines.join('\n'))!;
   let result = formatNode(ast, prepend.join('\n'));
-  if (result == null) return Promise.reject(new Error('Invalid JSON'));
+  if (result == null) return Promise.reject(new Error(`Invalid JSON ${json}`));
   for (const [id, comment] of comments) result = result.replace(id, comment);
   return result;
 };
@@ -59,15 +59,17 @@ export const format = (json: string) => {
 const formatNode = (ast: Node, data = '', level = 0): string => ({
   ['value' as string]: () => `${data}${JSON.stringify(ast.value)}`,
   property() {
-    const [{ value: prop }, child] = ast.children!;
+    const [{ value: prop }, child] = ast?.children || [{} as never];
     data += `${indent(level)}"${prop}": `;
     return formatNode(child, data, level);
   },
   array() {
-    const [i, div] = ast.parent!.length > print_width ? [level, '\n'] : [-1, ''];
+    (ast as any).parent ??= { length: +!!ast.children?.length + print_width };
+    const singleLine = ast.parent!.length < print_width || (ast.children?.length ?? 0) < 2;
+    const [i, div] = singleLine ? [-1, ''] : [level, '\n'];
     const [pad, sep] = [indent(i + 1), `,${div || ' '}`];
     data += `[${div}`;
-    data += map(ast.children!, (child) => formatNode(child, pad, level + 1)).join(sep);
+    data += map(ast?.children!, (child) => formatNode(child, pad, level + 1)).join(sep);
     return `${data}${div}${indent(i)}]`;
   },
   object() {
