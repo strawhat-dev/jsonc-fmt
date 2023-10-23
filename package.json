@@ -1,16 +1,10 @@
 {
   "name": "jsonc-fmt",
   "type": "module",
+  "dependencies": { "jsonc-parser": "^3.2.0", "memoize-one": "^6.0.0" },
+  "devDependencies": { "bun-types": "^1.0.7", "typescript": "^5.2.2" },
   "scripts": {
     "format": "bun run --bun src/jsonc-fmt.ts",
     "build": "bun build src/jsonc-fmt.ts --compile --target=bun --outfile=./bin/jsonc-fmt"
-  },
-  "dependencies": {
-    "jsonc-parser": "^3.2.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.8.7",
-    "bun-types": "latest",
-    "typescript": "^5.2.2"
   }
 }

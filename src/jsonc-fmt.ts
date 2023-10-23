@@ -7,7 +7,7 @@ if (!isatty(0)) readableStreamToText(Bun.stdin.stream()).then(format).then(write
 else {
   const args = process.argv.slice(2);
   const debug = popItem(args, '-d');
-  const write = popItem(args, '-w');
+  const write = popItem(args, '-w') && !debug;
   let [total, start] = [0, +!debug || Bun.nanoseconds()];
   const handle = (file: BunFile) => async (out: string) => {
     if (debug) {
